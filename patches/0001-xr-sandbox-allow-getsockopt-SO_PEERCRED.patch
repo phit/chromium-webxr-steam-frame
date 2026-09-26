@@ -1,0 +1,40 @@
+diff --git a/sandbox/policy/linux/bpf_xr_policy_linux.cc b/sandbox/policy/linux/bpf_xr_policy_linux.cc
+index 435e13d396..297453f582 100644
+--- a/sandbox/policy/linux/bpf_xr_policy_linux.cc
++++ b/sandbox/policy/linux/bpf_xr_policy_linux.cc
+@@ -11,6 +11,7 @@
+ #include "sandbox/linux/system_headers/linux_syscalls.h"
+ #include "sandbox/policy/linux/sandbox_linux.h"
+ 
++using sandbox::bpf_dsl::AllOf;
+ using sandbox::bpf_dsl::Allow;
+ using sandbox::bpf_dsl::Arg;
+ using sandbox::bpf_dsl::Error;
+@@ -27,8 +28,8 @@ XrProcessPolicy::~XrProcessPolicy() = default;
+ ResultExpr XrProcessPolicy::EvaluateSyscall(int system_call_number) const {
+   switch (system_call_number) {
+     // The runtime reaches its compositor over an AF_UNIX socket and passes fds
+-    // with SCM_RIGHTS, neither of which the GPU policy allows. get/setsockopt
+-    // stay disallowed; add a narrow level/optname restriction if ever needed.
++    // with SCM_RIGHTS, neither of which the GPU policy allows. setsockopt
++    // stays disallowed; getsockopt is limited to SO_PEERCRED below.
+ #if defined(__NR_getpeername)
+     case __NR_getpeername:
+ #endif
+@@ -49,6 +50,16 @@ ResultExpr XrProcessPolicy::EvaluateSyscall(int system_call_number) const {
+     case __NR_get_robust_list:
+ #endif
+       return Allow();
++#if defined(__NR_getsockopt)
++    case __NR_getsockopt: {
++      // SteamVR's IPC client checks who is on the other end of its socket
++      // with SO_PEERCRED. Nothing else is readable.
++      const Arg<int> level(1);
++      const Arg<int> optname(2);
++      return If(AllOf(level == SOL_SOCKET, optname == SO_PEERCRED), Allow())
++          .Else(Error(EPERM));
++    }
++#endif
+ #if defined(__NR_kill)
+     case __NR_kill: {
+       // SteamVR probes its sibling processes for liveness with kill(pid, 0).

@@ -1,0 +1,23 @@
+#!/bin/bash
+# Start the WebXR Chromium build. frame/install.sh copies this to
+# ~/.local/bin/chromium-xr; the Steam library shortcut and the desktop entry
+# both run it. Arguments go to Chromium, so `chromium-xr URL` opens a page.
+set -euo pipefail
+
+CHROME="${CHROMIUM_XR_HOME:-$HOME/chromium-xr}/chrome"
+[[ -x "$CHROME" ]] || { echo "chromium-xr: no build at $CHROME (run frame/install.sh)" >&2; exit 1; }
+
+# --enable-features=OpenXR: the Linux OpenXR device is off by default.
+# --ozone-platform=x11: gamescope's X display, where each app is a panel.
+# --no-first-run and --password-store=basic: otherwise startup can stop at a
+#   first-run or keyring prompt you can't see.
+# --disable-seccomp-filter-sandbox: with the XR process's seccomp policy on,
+#   SteamVR sees the wrong process ID and refuses the session (see
+#   docs/technical-notes.md). The namespace sandbox stays on.
+exec "$CHROME" \
+  --user-data-dir="$HOME/.config/chromium-xr" \
+  --enable-features=OpenXR \
+  --ozone-platform=x11 \
+  --no-first-run --no-default-browser-check --password-store=basic \
+  --disable-seccomp-filter-sandbox \
+  "$@"
