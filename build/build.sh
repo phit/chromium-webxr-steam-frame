@@ -21,6 +21,8 @@ PATCHES=$(cd "$(dirname "$0")/../patches" && pwd)
 CL_REF=${CL_REF:-refs/changes/79/8132979/44}
 
 mkdir -p "$W"
+# Absolute, so the paths below still work after the cd (e.g. CHROMIUM_XR_DIR=work).
+W=$(cd "$W" && pwd)
 cd "$W"
 stage() { echo "$(date -Is) $*" | tee -a "$W/stage"; }
 # Stops the build before the disk fills up.
