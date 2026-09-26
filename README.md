@@ -170,14 +170,16 @@ the Frame as above.
   (a sandboxed XR process on Linux) and
   [CL 8132979](https://chromium-review.googlesource.com/c/chromium/src/+/8132979)
   (the OpenXR device provider on Linux, patch set 44), tracked in Chromium
-  [issue 506004811](https://issues.chromium.org/issues/506004811). Neither
-  is merged upstream yet. The OpenXR device is behind
+  [issue 506004811](https://issues.chromium.org/issues/506004811). CL 8441736
+  has since merged; CL 8132979 is still in review. The OpenXR device is behind
   `--enable-features=OpenXR`, which the launcher passes.
 - **SteamVR fix.** SteamVR's OpenXR runtime asks the kernel who is on the
   other end of its socket (`getsockopt(SO_PEERCRED)`). The XR sandbox policy
   blocks all `getsockopt` calls, which crashed the XR process.
   [`patches/0001-…`](patches/0001-xr-sandbox-allow-getsockopt-SO_PEERCRED.patch)
-  allows only that one option.
+  allows only that one option. It's reported upstream, with the seccomp
+  issue below, in
+  [utzcoz/chromium-webxr-linux#7](https://github.com/utzcoz/chromium-webxr-linux/issues/7).
 - **Steam integration.** `frame/steam-shortcut.py` adds the shortcut through
   the Steam client's local DevTools port, the same API the Steam UI uses.
   Steam runs each app as its own panel, so Chromium gets one too.
