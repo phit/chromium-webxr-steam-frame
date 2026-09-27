@@ -85,6 +85,15 @@ the shortcut through the Steam client's DevTools port (`127.0.0.1:8080`,
 page `SharedJSContext`) with `SteamClient.Apps.AddShortcut`, so Steam doesn't
 need restarting. (`steam steam://addnonsteamgame/<path>` adds nothing.)
 
+Steam preloads its in-game overlay, `gameoverlayrenderer.so`, into everything
+it launches through `LD_PRELOAD`. In Chromium it segfaults the zygote during
+library initialisation. The GPU process then fails to launch
+(`GPU process launch failed: error_code=1002`), and after a few tries
+Chromium quits with `GPU process isn't usable. Goodbye.` about 30 seconds
+after starting. The `chromium-xr` launcher removes the overlay from
+`LD_PRELOAD` before starting Chromium, keeping anything else that was
+preloaded.
+
 ## Debugging
 
 - `chromium-xr --remote-debugging-port=9223 URL` opens DevTools on the Frame's

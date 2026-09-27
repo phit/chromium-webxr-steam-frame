@@ -7,6 +7,27 @@ set -euo pipefail
 CHROME="${CHROMIUM_XR_HOME:-$HOME/chromium-xr}/chrome"
 [[ -x "$CHROME" ]] || { echo "chromium-xr: no build at $CHROME (run frame/install.sh)" >&2; exit 1; }
 
+# Steam preloads its in-game overlay (gameoverlayrenderer.so) into anything it
+# launches. It segfaults in Chromium's zygote, the GPU process then can't
+# start, and Chromium quits with "GPU process isn't usable". Drop it and keep
+# anything else that was preloaded.
+if [[ -n "${LD_PRELOAD:-}" ]]; then
+  keep=()
+  # Split on spaces and colons only, like ld.so, with no glob expansion.
+  # read -d '' takes the whole value, newlines included (it returns 1 at EOF).
+  IFS=' :' read -r -d '' -a libs < <(printf '%s' "$LD_PRELOAD") || true
+  for lib in ${libs[@]+"${libs[@]}"}; do
+    [[ -z "$lib" || "$lib" == *gameoverlayrenderer.so ]] || keep+=("$lib")
+  done
+  if (( ${#keep[@]} )); then
+    LD_PRELOAD=${keep[0]}
+    for lib in "${keep[@]:1}"; do LD_PRELOAD+=":$lib"; done
+    export LD_PRELOAD
+  else
+    unset LD_PRELOAD
+  fi
+fi
+
 # --enable-features=OpenXR: the Linux OpenXR device is off by default.
 # --ozone-platform=x11: gamescope's X display, where each app is a panel.
 # --no-first-run and --password-store=basic: otherwise startup can stop at a
