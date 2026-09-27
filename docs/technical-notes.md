@@ -69,6 +69,28 @@ isn't needed.
   `visibilityState: "hidden"`, and only the first frame runs. Put the headset
   on to see it.
 
+## Input and frame rate (2026-09-27)
+
+Measured with a session that clears to red, with `hand-tracking` and
+`local-floor` requested:
+
+- **Frame rate:** 72 fps. Over 16.6 s the median frame interval was 13.9 ms,
+  p99 14 ms and max 14 ms, with no frame longer than 1.5× the median.
+  SteamVR's `vrcmd --stats` counted 2,940 submits, 4 dropped frames (all at
+  startup) and 2 reprojected.
+- **Controllers:** the right controller appears as a `tracked-pointer` input
+  source with profiles `oculus-touch` and
+  `generic-trigger-squeeze-thumbstick`, an `xr-standard` gamepad (7 buttons,
+  4 axes), a grip space, and a 25-joint `hand`. Its target-ray and grip
+  poses were available on every frame, and not emulated. A physical squeeze
+  produced `squeezestart`/`squeeze` events and set button 1 as pressed.
+- **Not covered:** trigger (`select`), thumbstick axes, face buttons, the left
+  controller (not connected during the test) and bare-hand tracking.
+- **Haptics:** `gamepad.hapticActuators` is empty, so pages can't vibrate
+  the controllers.
+- Requesting `hand-tracking` makes Chromium ask **Allow hand tracking?** in
+  the browser panel before the session starts.
+
 ## Graphics
 
 Chromium's GPU process uses ANGLE on OpenGL, which runs on zink over the

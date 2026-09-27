@@ -40,8 +40,8 @@ SteamVR 2.17.10) with Chromium **156.0.8071.0**, built for arm64:
 | [WebXR Samples](https://immersive-web.github.io/webxr-samples/) Immersive VR Session | shows its scene in the headset |
 | three.js [stereo 360 video](https://threejs.org/examples/webxr_vr_video.html) | plays in 3D |
 | Launch from the Steam library | opens as its own panel, like any app; WebXR renders in the headset |
-| Controller and hand input inside WebXR pages | not tested yet |
-| Frame rate | not measured (looks smooth) |
+| Controllers inside WebXR pages | tracked pose every frame; squeeze events and button state reach the page (trigger, thumbstick and left controller not tested) |
+| Frame rate | 72 fps, every frame 13.9–14 ms over 16 s (simple scene); SteamVR dropped frames only at startup |
 
 This is an unofficial, experimental build. See [Limitations](#limitations)
 before you use it for anything other than VR sites.
@@ -137,6 +137,7 @@ page directly.
   passwords you save are stored unencrypted in `~/.config/chromium-xr`.
 - **No automatic updates.** It won't get Chromium security fixes until you
   rebuild it.
+- **No controller vibration.** SteamVR reports no haptic actuators to the page.
 - **No DRM video.** There's no Widevine, so paid streaming services that
   need it won't play.
 - **One window at a time per profile.** If Chromium XR is already open,
