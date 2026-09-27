@@ -39,7 +39,7 @@ SteamVR 2.17.10) with Chromium **156.0.8071.0**, built for arm64:
 | `isSessionSupported("immersive-vr")` | `true` |
 | [WebXR Samples](https://immersive-web.github.io/webxr-samples/) Immersive VR Session | shows its scene in the headset |
 | three.js [stereo 360 video](https://threejs.org/examples/webxr_vr_video.html) | plays in 3D |
-| Launch from the Steam library | opens as its own panel, like any app |
+| Launch from the Steam library | opens as its own panel, like any app; WebXR renders in the headset |
 | Controller and hand input inside WebXR pages | not tested yet |
 | Frame rate | not measured (looks smooth) |
 

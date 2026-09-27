@@ -96,6 +96,21 @@ preloaded.
 
 ## Debugging
 
+- **Testing without wearing the headset.** In standby SteamVR keeps the
+  session hidden. With `vrcmd` from `/opt/steamvr/bin/linuxarm64`:
+  `vrcmd --set-settings-bool power.pauseCompositorOnStandby 0`,
+  `vrcmd --set-settings-float power.turnOffScreensTimeout 3600`, then
+  `vrcmd --handlewakeup`. The session becomes visible and renders at the
+  headset's rate. If it stays `visible-blurred`, the Steam dashboard is open
+  over it: run `SteamClient.OpenVR.VROverlay.HideDashboard()` in the Steam
+  client's DevTools (`127.0.0.1:8080`, page `SharedJSContext`). Undo with
+  `--set-settings-bool power.pauseCompositorOnStandby 1` and
+  `--set-settings-float power.turnOffScreensTimeout 5`. (The bool setter
+  reads `true` as false; use 1 and 0.) Verified 2026-09-27: a WebXR session
+  clearing to red filled both eyes in SteamVR's stereo screenshot.
+- If the headset is outside its playspace, SteamVR shows the passthrough
+  camera wherever a page leaves transparent pixels.
+
 - `chromium-xr --remote-debugging-port=9223 URL` opens DevTools on the Frame's
   loopback. It has no password, so close the browser when you're done. If a
   VPN such as userspace Tailscale forwards traffic to loopback, other devices
