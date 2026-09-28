@@ -41,6 +41,7 @@ SteamVR 2.17.10) with Chromium **156.0.8071.0**, built for arm64:
 | three.js [stereo 360 video](https://threejs.org/examples/webxr_vr_video.html) | plays in 3D |
 | Launch from the Steam library | opens as its own panel, like any app; WebXR renders in the headset |
 | Controllers inside WebXR pages | tracked pose every frame; squeeze events and button state reach the page (trigger, thumbstick and left controller not tested) |
+| Laser pointer on the browser panel | reaches Chromium as a touchscreen, so trigger-and-drag scrolls the page (set up and checked on the Frame; the drag itself not yet tried in the headset) |
 | Frame rate | 72 fps, every frame 13.9–14 ms over 16 s (simple scene); SteamVR dropped frames only at startup |
 
 This is an unofficial, experimental build. See [Limitations](#limitations)
@@ -112,14 +113,17 @@ Library**, and pick Chromium XR.
    the headset.
 2. Go to a WebXR site, for example the
    [WebXR Samples](https://immersive-web.github.io/webxr-samples/).
-3. Press the site's **Enter VR** button.
-4. Chromium asks **Allow VR?** in the browser panel. Choose *Allow this time*
-   or *Allow while visiting the site*.
-5. To leave VR, use the site's exit button or the Steam button.
+3. Press the site's **Enter VR** button. It opens in the headset straight
+   away: the launcher sets Chromium's VR permission to Allow for every site,
+   so there's no **Allow VR?** prompt.
+4. To leave VR, use the site's exit button or the Steam button.
 
 The first time you launch it, Steam may show an **External Controller
 Translation** notice. It's only information about controller button icons;
 choose OK.
+
+Point at the panel and pull the trigger to click. Hold the trigger and drag
+to scroll, as on a touchscreen.
 
 From a terminal on the Frame, `chromium-xr https://example.com` opens a
 page directly.
@@ -140,6 +144,21 @@ page directly.
 - **No controller vibration.** SteamVR reports no haptic actuators to the page.
 - **No DRM video.** There's no Widevine, so paid streaming services that
   need it won't play.
+- **Its panel isn't Steam's app panel.** gamescope sends the laser to apps
+  Steam launches as mouse clicks, so dragging would select text. The
+  launcher therefore runs Chromium outside Steam's process tree, where each
+  window gets a plain gamescope panel and the laser acts as a touchscreen.
+  Steam still shows Chromium XR as running, and stopping it there closes
+  Chromium. Chromium's output goes to the journal
+  (`journalctl --user -u 'chromium-xr-*'`). Start it with
+  `CHROMIUM_XR_STEAM_PANEL=1` in the shortcut's launch options (as
+  `CHROMIUM_XR_STEAM_PANEL=1 %command%`) to keep it in Steam's panel, with
+  mouse clicks.
+- **Every site can start VR.** Each launch sets the VR permission's default
+  to Allow and removes any per-site Block, so any page can take over the
+  headset when you press its button (or, on some sites, without one). You
+  can still block a site in `chrome://settings/content/vr`, but only until
+  the next launch.
 - **One window at a time per profile.** If Chromium XR is already open,
   launching it again opens the page in the existing window.
 - **Not a default browser.** It works as one (the desktop entry registers
