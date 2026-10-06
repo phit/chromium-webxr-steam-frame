@@ -144,22 +144,6 @@ to scroll, as on a touchscreen.
 From a terminal on the Frame, `chromium-xr https://example.com` opens a
 page directly.
 
-### Trying Google's Chrome instead
-
-Google now publishes Chrome for arm64 Linux, and from 157.0.8088.0 (Canary)
-it contains the OpenXR code. It may work on the Frame without a build of our
-own (untested so far). To try it, on the Frame:
-
-```sh
-chromium-webxr-steam-frame/frame/try-google-chrome.sh          # Canary
-chromium-webxr-steam-frame/frame/try-google-chrome.sh beta     # or another channel
-```
-
-It downloads Chrome from Google's apt repository, unpacks it into
-`~/chromium-xr-google`, and starts it with the launcher's flags and its own
-profile (`~/.config/chromium-xr-google`). Then enter VR on the WebXR Samples
-page that opens.
-
 ## Limitations
 
 - **Part of the sandbox is off.** The launcher passes

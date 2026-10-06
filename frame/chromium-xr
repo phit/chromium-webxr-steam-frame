@@ -37,7 +37,7 @@ fi
 #   docs/technical-notes.md). The namespace sandbox stays on.
 # --touch-events=enabled: Xwayland labels its touch device as a pointer, so
 #   Chromium doesn't offer pages the touch API on its own.
-profile=${CHROMIUM_XR_PROFILE:-$HOME/.config/chromium-xr}
+profile=$HOME/.config/chromium-xr
 
 # Let sites enter VR without the "Allow VR?" prompt: make Allow the default
 # for the VR permission. Sites blocked in Site settings stay blocked. There's
