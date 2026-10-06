@@ -7,10 +7,11 @@ SteamVR, as a full VR experience.
 
 The Chromium that SteamOS offers (Flathub) can't do this. Websites see
 `navigator.xr`, but `isSessionSupported("immersive-vr")` returns `false`, so
-VR buttons are greyed out or missing. Upstream Chromium only wires up its
-OpenXR backend on Windows and Android. This repo builds Chromium with the
-in-progress Linux OpenXR changes, adds a small fix so it works with SteamVR,
-and installs it on the Frame as a normal app in your Steam library.
+VR buttons are greyed out or missing. Chromium only gained OpenXR on Linux
+in version 157, and it's off unless the browser is started with the right
+flags. This repo installs a browser with those flags on the Frame, as a
+normal app in your Steam library: by default Google's own arm64 Chrome, or a
+Chromium you build yourself with the recipe here.
 
 ## What you can do with it
 
@@ -44,22 +45,57 @@ SteamVR 2.17.10) with Chromium **156.0.8071.0**, built for arm64:
 | Laser pointer on the browser panel | reaches Chromium as a touchscreen, so trigger-and-drag scrolls the page (set up and checked on the Frame; the drag itself not yet tried in the headset) |
 | Frame rate | 72 fps, every frame 13.9–14 ms over 16 s (simple scene); SteamVR dropped frames only at startup |
 
-The build now targets Chromium 157 or newer, which has the
-upstream Linux OpenXR changes merged. It hasn't been tested on the Frame yet.
+Google Chrome Canary 157.0.8088.0 for arm64, with the same launcher, also
+starts immersive VR sessions on the Frame (first test; the rows above haven't
+all been repeated with it). Our own build now targets Chromium 157 or newer
+and hasn't been tested on the Frame yet.
 
-This is an unofficial, experimental build. See [Limitations](#limitations)
-before you use it for anything other than VR sites.
+This is unofficial and experimental. See [Limitations](#limitations) before
+you use it for anything other than VR sites.
 
 ## Requirements
 
 - A Steam Frame with SteamVR, and a way to run commands on it: the terminal
   in Desktop Mode, or SSH.
-- To build: an **x86-64 Linux machine** with about **90 GB free disk**, git,
-  Python 3, tmux (or another way to keep a long job running) and a few
-  hours. No root access is needed. The first build took about 9.5 hours on
-  a 6-core, 12-thread desktop CPU; rebuilds take minutes.
+- Only to build Chromium yourself: an **x86-64 Linux machine** with about
+  **90 GB free disk**, git, Python 3, tmux (or another way to keep a long job
+  running) and a few hours, or a GitHub fork (see
+  [Build Chromium yourself](#build-chromium-yourself)).
 
-## Build
+## Install on the Frame
+
+On the Frame:
+
+```sh
+git clone https://github.com/saphid/chromium-webxr-steam-frame
+chromium-webxr-steam-frame/frame/install.sh
+```
+
+The installer:
+
+- downloads Google's arm64 Chrome from Google's apt repository, from the
+  most stable channel that has WebXR on Linux (Chrome 157 or newer; Canary
+  for now), checks it against the repository's SHA-256, and unpacks it into
+  `~/chromium-xr`, after checking the new binary runs;
+- installs the `chromium-xr` launcher in `~/.local/bin`;
+- adds **Chromium XR** to the Desktop Mode app menu;
+- adds **Chromium XR** to your Steam library, without restarting Steam.
+
+To pick a channel, name it: `install.sh beta` (or `stable`, `unstable`,
+`canary`). To install a Chromium you built, pass its tarball:
+`install.sh chromium-xr-arm64.tar.xz`.
+
+Run it again to update. Your profile (`~/.config/chromium-xr`) and the Steam
+shortcut are kept. You can delete the repo clone afterwards; the installer
+keeps what it needs to uninstall.
+
+If the Steam shortcut can't be added automatically, add it by hand: in
+Desktop Mode, open Steam, choose **Games → Add a Non-Steam Game to My
+Library**, and pick Chromium XR.
+
+## Build Chromium yourself
+
+Optional: for a Chromium instead of Google's Chrome, or with our patches.
 
 On the Linux build machine:
 
@@ -95,33 +131,17 @@ for 6 hours. So the workflow runs in up to ten parts. Each part builds for
 about 5 hours and passes the build tree on to the next as an artifact (about
 10–20 GB). This keeps artifact storage free only in a public repository.
 
-## Install on the Frame
+### Install your build
 
-Copy the tarball and this repo to the Frame, then run the installer there.
-For example, over SSH from the build machine (replace `steamframe` with your
-Frame's hostname or IP address):
+Copy the tarball to the Frame and pass it to the installer. For example,
+over SSH from the build machine (replace `steamframe` with your Frame's
+hostname or IP address):
 
 ```sh
 scp ~/chromium-xr/chromium-xr-arm64.tar.xz steamos@steamframe:
 ssh steamos@steamframe
-git clone https://github.com/saphid/chromium-webxr-steam-frame
 chromium-webxr-steam-frame/frame/install.sh ~/chromium-xr-arm64.tar.xz
 ```
-
-The installer:
-
-- unpacks the build into `~/chromium-xr`, after checking the new binary runs;
-- installs the `chromium-xr` launcher in `~/.local/bin`;
-- adds **Chromium XR** to the Desktop Mode app menu;
-- adds **Chromium XR** to your Steam library, without restarting Steam.
-
-Run it again with a newer tarball to update. Your profile
-(`~/.config/chromium-xr`) and the Steam shortcut are kept. You can delete
-the repo clone afterwards; the installer keeps what it needs to uninstall.
-
-If the Steam shortcut can't be added automatically, add it by hand: in
-Desktop Mode, open Steam, choose **Games → Add a Non-Steam Game to My
-Library**, and pick Chromium XR.
 
 ## Use it
 
@@ -144,22 +164,6 @@ to scroll, as on a touchscreen.
 From a terminal on the Frame, `chromium-xr https://example.com` opens a
 page directly.
 
-### Trying Google's Chrome instead
-
-Google now publishes Chrome for arm64 Linux, and from 157.0.8088.0 (Canary)
-it contains the OpenXR code. It may work on the Frame without a build of our
-own (untested so far). To try it, on the Frame:
-
-```sh
-chromium-webxr-steam-frame/frame/try-google-chrome.sh          # Canary
-chromium-webxr-steam-frame/frame/try-google-chrome.sh beta     # or another channel
-```
-
-It downloads Chrome from Google's apt repository, unpacks it into
-`~/chromium-xr-google`, and starts it with the launcher's flags and its own
-profile (`~/.config/chromium-xr-google`). Then enter VR on the WebXR Samples
-page that opens.
-
 ## Limitations
 
 - **Part of the sandbox is off.** The launcher passes
@@ -171,12 +175,14 @@ page that opens.
 - **Saved passwords aren't encrypted.** The launcher uses
   `--password-store=basic` so startup doesn't stop at a keyring prompt, so
   passwords you save are stored unencrypted in `~/.config/chromium-xr`.
-- **No automatic updates on the Frame.** It won't get Chromium security fixes
-  until you install a newer build. The repo builds new Chromium releases by
-  itself (see [Updating](#updating)), but you still have to install them.
+- **No automatic updates on the Frame.** It won't get security fixes until
+  you run the installer again (see [Updating](#updating)).
+- **Google's Chrome is Google's.** The default install is Google Chrome,
+  with its Google services and terms, not Chromium. Install your own build
+  if you'd rather not.
 - **No controller vibration.** SteamVR reports no haptic actuators to the page.
-- **No DRM video.** There's no Widevine, so paid streaming services that
-  need it won't play.
+- **DRM video only with Google's Chrome.** Google's Chrome ships Widevine for
+  arm64 (not yet tried with streaming services); our Chromium build has none.
 - **Its panel isn't Steam's app panel.** gamescope sends the laser to apps
   Steam launches as mouse clicks, so dragging would select text. The
   launcher therefore runs Chromium outside Steam's process tree, where each
@@ -204,11 +210,16 @@ page that opens.
 ~/.local/share/chromium-xr/uninstall.sh --remove-profile  # also deletes settings and logins
 ```
 
-This removes the build, the launcher, the menu entry and the Steam shortcut.
+This removes the browser, the launcher, the menu entry and the Steam shortcut.
 
 ## Updating
 
-The build pins one Chromium release (`CHROMIUM_VERSION` in
+With Google's Chrome, run `frame/install.sh` again (with the same channel,
+if you picked one). It downloads the newest version and moves to a more
+stable channel once that one has Chrome 157. Google's Chrome doesn't update
+itself here: Linux Chrome relies on the package manager for that.
+
+For your own build: the build pins one Chromium release (`CHROMIUM_VERSION` in
 [`build/build.sh`](build/build.sh)). On GitHub, the **Bump Chromium** workflow
 checks once a week for a newer Linux release on Stable (on Beta until Stable
 reaches Chromium 157). If the patch in [`patches/`](patches) still applies,

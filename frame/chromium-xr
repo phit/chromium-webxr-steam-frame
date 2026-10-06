@@ -1,11 +1,12 @@
 #!/bin/bash
-# Start the WebXR Chromium build. frame/install.sh copies this to
+# Start the browser frame/install.sh installed (Google's arm64 Chrome or our
+# Chromium build) with WebXR on. install.sh copies this to
 # ~/.local/bin/chromium-xr; the Steam library shortcut and the desktop entry
-# both run it. Arguments go to Chromium, so `chromium-xr URL` opens a page.
+# both run it. Arguments go to the browser, so `chromium-xr URL` opens a page.
 set -euo pipefail
 
 CHROME="${CHROMIUM_XR_HOME:-$HOME/chromium-xr}/chrome"
-[[ -x "$CHROME" ]] || { echo "chromium-xr: no build at $CHROME (run frame/install.sh)" >&2; exit 1; }
+[[ -x "$CHROME" ]] || { echo "chromium-xr: no browser at $CHROME (run frame/install.sh)" >&2; exit 1; }
 
 # Steam preloads its in-game overlay (gameoverlayrenderer.so) into anything it
 # launches. It segfaults in Chromium's zygote, the GPU process then can't
