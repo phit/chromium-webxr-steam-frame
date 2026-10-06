@@ -1,0 +1,171 @@
+# Builds Chromium XR for arm64 and uploads chromium-xr-arm64.tar.xz.
+#
+# A first build takes about a day of CPU time on a free runner, longer than a
+# job may run (6 h). So the build is split into parts: each part builds for
+# about 5 h and hands the tree to the next (see .github/scripts/ci.sh). Later
+# parts are skipped once the build is done.
+#
+# Run it from the Actions tab, or push a tag such as v157.0.8088.0-1 to also
+# publish a release.
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      chromium_version:
+        description: Chromium release tag to build (empty for the one in build/build.sh)
+        required: false
+        default: ""
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: build-${{ github.ref }}
+
+permissions:
+  contents: read
+
+env:
+  CHROMIUM_VERSION: ${{ inputs.chromium_version }}
+
+jobs:
+  part_01:
+    name: Build part 1
+    runs-on: ubuntu-24.04
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+        with: { first: true }
+
+  part_02:
+    name: Build part 2
+    runs-on: ubuntu-24.04
+    needs: part_01
+    if: needs.part_01.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+
+  part_03:
+    name: Build part 3
+    runs-on: ubuntu-24.04
+    needs: part_02
+    if: needs.part_02.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+
+  part_04:
+    name: Build part 4
+    runs-on: ubuntu-24.04
+    needs: part_03
+    if: needs.part_03.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+
+  part_05:
+    name: Build part 5
+    runs-on: ubuntu-24.04
+    needs: part_04
+    if: needs.part_04.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+
+  part_06:
+    name: Build part 6
+    runs-on: ubuntu-24.04
+    needs: part_05
+    if: needs.part_05.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+
+  part_07:
+    name: Build part 7
+    runs-on: ubuntu-24.04
+    needs: part_06
+    if: needs.part_06.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+
+  part_08:
+    name: Build part 8
+    runs-on: ubuntu-24.04
+    needs: part_07
+    if: needs.part_07.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+
+  part_09:
+    name: Build part 9
+    runs-on: ubuntu-24.04
+    needs: part_08
+    if: needs.part_08.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+
+  part_10:
+    name: Build part 10
+    runs-on: ubuntu-24.04
+    needs: part_09
+    if: needs.part_09.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.build.outputs.status }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: build
+        uses: ./.github/actions/build-part
+        with: { last: true }
+
+  release:
+    name: Release
+    needs: part_10
+    # Runs when whichever part finished the build succeeded; failure() covers
+    # every earlier part.
+    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: chromium-xr-arm64.tar.xz
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tarball=$(find . -name chromium-xr-arm64.tar.xz | head -n 1)
+          gh release create "$GITHUB_REF_NAME" "$tarball" \
+            --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes

@@ -1,0 +1,64 @@
+name: Build part
+description: >
+  Run the Chromium build for up to about 5 hours, continuing from the previous
+  part's tree, and pass the tree on to the next part if it isn't done.
+
+inputs:
+  first:
+    description: "'true' for the first part: check out and prepare the tree."
+    default: "false"
+  last:
+    description: "'true' for the last part: running out of time fails the build."
+    default: "false"
+
+outputs:
+  status:
+    description: "'running' if the next part should continue, 'completed' when built."
+    value: ${{ steps.build.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up runner
+      shell: bash
+      run: .github/scripts/ci.sh setup
+
+    - name: Download build tree
+      if: inputs.first != 'true'
+      uses: actions/download-artifact@v8
+      with:
+        name: build-tree.tar.zst
+        path: ${{ runner.temp }}/build-tree
+
+    - name: Unpack build tree
+      if: inputs.first != 'true'
+      shell: bash
+      run: .github/scripts/ci.sh restore
+
+    - name: Build
+      id: build
+      shell: bash
+      run: .github/scripts/ci.sh build "${{ inputs.first }}" "${{ inputs.last }}"
+
+    - name: Pack build tree
+      if: steps.build.outputs.status == 'running'
+      shell: bash
+      run: .github/scripts/ci.sh save
+
+    - name: Upload build tree
+      if: steps.build.outputs.status == 'running'
+      uses: actions/upload-artifact@v7
+      with:
+        path: ${{ runner.temp }}/build-tree/build-tree.tar.zst
+        archive: false
+        overwrite: true
+        retention-days: 3
+        if-no-files-found: error
+
+    - name: Upload Chromium XR
+      if: steps.build.outputs.status == 'completed'
+      uses: actions/upload-artifact@v7
+      with:
+        path: ${{ env.CHROMIUM_XR_DIR }}/chromium-xr-arm64.tar.xz
+        archive: false
+        if-no-files-found: error

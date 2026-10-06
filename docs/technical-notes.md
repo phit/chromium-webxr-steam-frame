@@ -14,7 +14,8 @@ OpenXR code, so the linker drops it. Flathub's arm64 Chromium contains no
 OpenXR loader code at all, and flags such as `--force-webxr-runtime=openxr`
 can't bring it back.
 
-The two Gerrit changes this repo builds fill that gap:
+Two Gerrit changes fill that gap. Both have merged, and the first release
+with both is 157.0.8088.0 (Canary):
 
 - [CL 8132979](https://chromium-review.googlesource.com/c/chromium/src/+/8132979)
   creates the OpenXR device on Linux, using the Vulkan graphics binding
@@ -25,7 +26,13 @@ The two Gerrit changes this repo builds fill that gap:
   `XrProcessPolicy` seccomp policy and a file broker), instead of requiring
   `--no-sandbox`.
 
-The build uses patch set 44 of CL 8132979, which sits on top of CL 8441736.
+The notes below were written against patch set 44 of CL 8132979, before it
+merged. Neither problem is fixed upstream yet: the merged XR seccomp policy
+still refuses every `getsockopt`, and nothing changes how the broker answers
+`/proc/self`.
+[CL 8498995](https://chromium-review.googlesource.com/c/chromium/src/+/8498995),
+also in 157.0.8088.0, lets the XR sandbox read a Flatpak's GPU drivers; it
+matters for the Flathub Chromium, not for this build.
 
 ## The SO_PEERCRED crash
 

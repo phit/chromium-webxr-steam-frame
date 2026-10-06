@@ -44,6 +44,9 @@ SteamVR 2.17.10) with Chromium **156.0.8071.0**, built for arm64:
 | Laser pointer on the browser panel | reaches Chromium as a touchscreen, so trigger-and-drag scrolls the page (set up and checked on the Frame; the drag itself not yet tried in the headset) |
 | Frame rate | 72 fps, every frame 13.9–14 ms over 16 s (simple scene); SteamVR dropped frames only at startup |
 
+The build now targets Chromium 157.0.8088.0, the first release with the
+upstream Linux OpenXR changes merged. It hasn't been tested on the Frame yet.
+
 This is an unofficial, experimental build. See [Limitations](#limitations)
 before you use it for anything other than VR sites.
 
@@ -78,6 +81,19 @@ in [`patches/`](patches), cross-compiles for arm64 and packs the result into
 - To build on another disk, set `CHROMIUM_XR_DIR` and use that directory
   in place of `~/chromium-xr` in the commands above, including the log path.
 - It stops itself if free disk space drops below 12 GB.
+
+### Build on GitHub Actions
+
+Instead of a local machine, a fork of this repo can build on GitHub's free
+runners. In the **Actions** tab, run the **Build** workflow; leave the version
+empty to build the one pinned in `build.sh`. When it's done, download
+`chromium-xr-arm64.tar.xz` from the run's artifacts. Pushing a tag that starts
+with `v` (for example `v157.0.8088.0-1`) also publishes it as a release.
+
+A first build takes more than a day on a free runner, and a job may only run
+for 6 hours. So the workflow runs in up to ten parts. Each part builds for
+about 5 hours and passes the build tree on to the next as an artifact (about
+10–20 GB). This keeps artifact storage free only in a public repository.
 
 ## Install on the Frame
 
@@ -175,23 +191,23 @@ This removes the build, the launcher, the menu entry and the Steam shortcut.
 
 ## Updating
 
-The Chromium changes are still under review upstream, so this repo pins one
-revision of them (`CL_REF` in [`build/build.sh`](build/build.sh), currently
-patch set 44 of CL 8132979). To build a newer patch set, set `CL_REF` when
-you run the build, for example
-`CL_REF=refs/changes/79/8132979/45 build/build.sh`. The script fetches it,
-syncs, re-applies the local patch and rebuilds. A newer patch set may need
-the patch in [`patches/`](patches) updated. Then install the new tarball on
-the Frame as above.
+The build pins one Chromium release (`CHROMIUM_VERSION` in
+[`build/build.sh`](build/build.sh), currently 157.0.8088.0). To build a newer
+one, set `CHROMIUM_VERSION` to any Chromium release tag when you run the
+build, as in `CHROMIUM_VERSION=<version> build/build.sh`, or enter it
+when you run the GitHub workflow. The script fetches it, syncs, re-applies the
+local patch and rebuilds. A newer release may need the patch in
+[`patches/`](patches) updated. Then install the new tarball on the Frame as
+above.
 
 ## How it works
 
 - **Chromium changes.** [CL 8441736](https://chromium-review.googlesource.com/c/chromium/src/+/8441736)
   (a sandboxed XR process on Linux) and
   [CL 8132979](https://chromium-review.googlesource.com/c/chromium/src/+/8132979)
-  (the OpenXR device provider on Linux, patch set 44), tracked in Chromium
-  [issue 506004811](https://issues.chromium.org/issues/506004811). CL 8441736
-  has since merged; CL 8132979 is still in review. The OpenXR device is behind
+  (the OpenXR device provider on Linux), tracked in Chromium
+  [issue 506004811](https://issues.chromium.org/issues/506004811). Both have
+  merged and ship from Chromium 157. The OpenXR device is behind
   `--enable-features=OpenXR`, which the launcher passes.
 - **SteamVR fix.** SteamVR's OpenXR runtime asks the kernel who is on the
   other end of its socket (`getsockopt(SO_PEERCRED)`). The XR sandbox policy
