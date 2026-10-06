@@ -1,12 +1,12 @@
 #!/bin/bash
-# Start the browser frame/install.sh installed (Google's arm64 Chrome or our
-# Chromium build) with WebXR on. install.sh copies this to
-# ~/.local/bin/chromium-xr; the Steam library shortcut and the desktop entry
-# both run it. Arguments go to the browser, so `chromium-xr URL` opens a page.
+# Start Google's arm64 Chrome, as frame/install.sh installed it, with WebXR
+# on. install.sh copies this to
+# ~/.local/bin/chrome-xr; the Steam library shortcut and the desktop entry
+# both run it. Arguments go to the browser, so `chrome-xr URL` opens a page.
 set -euo pipefail
 
-CHROME="${CHROMIUM_XR_HOME:-$HOME/chromium-xr}/chrome"
-[[ -x "$CHROME" ]] || { echo "chromium-xr: no browser at $CHROME (run frame/install.sh)" >&2; exit 1; }
+CHROME="${CHROME_XR_HOME:-$HOME/chrome-xr}/chrome"
+[[ -x "$CHROME" ]] || { echo "chrome-xr: no browser at $CHROME (run frame/install.sh)" >&2; exit 1; }
 
 # Steam preloads its in-game overlay (gameoverlayrenderer.so) into anything it
 # launches. It segfaults in Chromium's zygote, the GPU process then can't
@@ -38,7 +38,7 @@ fi
 #   docs/technical-notes.md). The namespace sandbox stays on.
 # --touch-events=enabled: Xwayland labels its touch device as a pointer, so
 #   Chromium doesn't offer pages the touch API on its own.
-profile=${CHROMIUM_XR_PROFILE:-$HOME/.config/chromium-xr}
+profile=${CHROME_XR_PROFILE:-$HOME/.config/chrome-xr}
 
 # Let sites enter VR without the "Allow VR?" prompt: make Allow the default
 # for the VR permission. Sites blocked in Site settings stay blocked. There's
@@ -46,7 +46,7 @@ profile=${CHROMIUM_XR_PROFILE:-$HOME/.config/chromium-xr}
 # so skip it while Chromium is running. flock stops two launches editing the
 # file at once; the running check is inside it, so it's fresh for each edit.
 mkdir -p "$profile"
-flock "$profile/.chromium-xr-prefs.lock" python3 - "$profile" <<'EOF' ||
+flock "$profile/.chrome-xr-prefs.lock" python3 - "$profile" <<'EOF' ||
 import json, os, sys, tempfile
 profile = sys.argv[1]
 try:
@@ -75,7 +75,7 @@ except BaseException:
     os.unlink(tmp)
     raise
 EOF
-  echo "chromium-xr: couldn't set the VR permission to Allow" >&2
+  echo "chrome-xr: couldn't set the VR permission to Allow" >&2
 
 cmd=("$CHROME"
   --user-data-dir="$profile"
@@ -91,8 +91,8 @@ cmd=("$CHROME"
 # Steam's process tree still get their own panel, but the laser reaches them
 # as a touchscreen, as in Desktop Mode. So when Steam starts us, run Chromium
 # as its own systemd user service and wait for it, which keeps it "running"
-# in Steam. CHROMIUM_XR_STEAM_PANEL=1 keeps the old behaviour.
-if [[ -z "${SteamAppId:-}" || "${CHROMIUM_XR_STEAM_PANEL:-}" == 1 ]] ||
+# in Steam. CHROME_XR_STEAM_PANEL=1 keeps the old behaviour.
+if [[ -z "${SteamAppId:-}" || "${CHROME_XR_STEAM_PANEL:-}" == 1 ]] ||
     ! command -v systemd-run >/dev/null; then
   exec "${cmd[@]}"
 fi
@@ -106,7 +106,7 @@ for name in $(compgen -e); do
     *) env_args+=(-E "$name") ;;
   esac
 done
-unit=chromium-xr-$$
+unit=chrome-xr-$$
 # Steam's Stop, or the reaper ending us, closes Chromium too. Set before
 # starting it, so a Stop during startup isn't lost (bash runs the trap once
 # systemd-run returns).
@@ -116,7 +116,7 @@ if ! systemd-run --user --quiet --collect --same-dir --unit="$unit" \
     --service-type=exec --expand-environment=no "${env_args[@]}" "${cmd[@]}"; then
   # A Stop can make systemd-run fail too; don't start Chromium again then.
   [[ -z "$stopping" ]] || exit 0
-  echo "chromium-xr: systemd-run failed; starting in Steam's panel instead" >&2
+  echo "chrome-xr: systemd-run failed; starting in Steam's panel instead" >&2
   exec "${cmd[@]}"
 fi
 # MainPID is 0 once the service has ended (and been collected), e.g. when
@@ -129,7 +129,7 @@ for _ in 1 2 3 4 5; do
   sleep 1
 done
 if [[ -z "$pid" ]]; then
-  echo "chromium-xr: can't query $unit; Chromium keeps running, but Steam won't track it" >&2
+  echo "chrome-xr: can't query $unit; Chrome keeps running, but Steam won't track it" >&2
   exit 1
 fi
 [[ "$pid" != 0 ]] || exit 0

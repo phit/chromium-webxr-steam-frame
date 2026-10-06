@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Add, update or remove the "Chromium XR" shortcut in the Steam library.
+"""Add, update or remove a shortcut (such as "Chrome XR") in the Steam library.
 
 Talks to the Steam client's built-in DevTools port (127.0.0.1:8080, which
 SteamOS starts Steam with), so Steam doesn't need restarting. Python stdlib

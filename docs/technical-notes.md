@@ -126,7 +126,7 @@ wheel events in either mode.
 Chromium registers itself in a systemd scope of its own
 (`app-org.chromium.Chromium-<pid>.scope`), so gamescope finds the app id by
 walking up to Steam's `reaper`. Forking can't escape that, because `reaper`
-is a subreaper. When `SteamAppId` is set, the `chromium-xr` launcher starts
+is a subreaper. When `SteamAppId` is set, the `chrome-xr` launcher starts
 Chromium with `systemd-run --user` instead, and waits for it to exit.
 Chromium's parent is then the user's systemd, and its windows get no app id.
 Chromium's menus and bubbles are override-redirect windows, which gamescope
@@ -199,7 +199,7 @@ it launches through `LD_PRELOAD`. In Chromium it segfaults the zygote during
 library initialisation. The GPU process then fails to launch
 (`GPU process launch failed: error_code=1002`), and after a few tries
 Chromium quits with `GPU process isn't usable. Goodbye.` about 30 seconds
-after starting. The `chromium-xr` launcher removes the overlay from
+after starting. The `chrome-xr` launcher removes the overlay from
 `LD_PRELOAD` before starting Chromium, keeping anything else that was
 preloaded.
 
@@ -220,7 +220,7 @@ preloaded.
 - If the headset is outside its playspace, SteamVR shows the passthrough
   camera wherever a page leaves transparent pixels.
 
-- `chromium-xr --remote-debugging-port=9223 URL` opens DevTools on the Frame's
+- `chrome-xr --remote-debugging-port=9223 URL` opens DevTools on the Frame's
   loopback. It has no password, so close the browser when you're done. If a
   VPN such as userspace Tailscale forwards traffic to loopback, other devices
   can reach it.
