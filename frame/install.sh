@@ -69,4 +69,10 @@ else
 fi
 
 echo "Installed $installed."
-echo "Done. Open Chrome XR from your Steam library, or run: chrome-xr URL"
+echo "Done. Open Chrome XR from your Steam library, or run: $launcher URL"
+# SteamOS's default PATH doesn't include ~/.local/bin.
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) echo "(~/.local/bin isn't on your PATH; to type just chrome-xr, add" \
+       "export PATH=\"\$HOME/.local/bin:\$PATH\" to ~/.bashrc)" ;;
+esac

@@ -111,8 +111,10 @@ choose OK.
 Point at the panel and pull the trigger to click. Hold the trigger and drag
 to scroll, as on a touchscreen.
 
-From a terminal on the Frame, `chrome-xr https://example.com` opens a
-page directly.
+From a terminal on the Frame, `~/.local/bin/chrome-xr https://example.com`
+opens a page directly. SteamOS doesn't put `~/.local/bin` on the `PATH`; to
+type just `chrome-xr`, add `export PATH="$HOME/.local/bin:$PATH"` to
+`~/.bashrc`.
 
 ## Limitations
 
@@ -125,7 +127,7 @@ page directly.
   [changed SteamVR](https://github.com/utzcoz/chromium-webxr-linux/issues/7#issuecomment-5958394261)
   so this should become unnecessary with a coming Steam Frame OS Beta. To
   try with the filter on, start it with `CHROME_XR_SECCOMP=1`, for example
-  `CHROME_XR_SECCOMP=1 chrome-xr`.
+  `CHROME_XR_SECCOMP=1 ~/.local/bin/chrome-xr`.
 - **Saved passwords aren't encrypted.** The launcher uses
   `--password-store=basic` so startup doesn't stop at a keyring prompt, so
   passwords you save are stored unencrypted in `~/.config/chrome-xr`.
