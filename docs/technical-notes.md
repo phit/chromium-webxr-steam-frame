@@ -57,7 +57,9 @@ isn't needed.
 ## What a working session looks like
 
 - The page's `isSessionSupported("immersive-vr")` resolves `true`.
-- After the **Allow VR?** prompt, `requestSession("immersive-vr")` succeeds.
+- `requestSession("immersive-vr")` succeeds. (Chromium asks **Allow VR?**
+  first unless the site's VR permission is Allow; the launcher makes Allow
+  the default, see below.)
   The first frame has a viewer pose with 2 views and a 2880 × 1440 framebuffer
   (1440 × 1440 per eye).
 - SteamVR's log (`~/.local/share/Steam/logs/vrserver.txt`) shows the app move
@@ -90,6 +92,82 @@ Measured with a session that clears to red, with `hand-tracking` and
   the controllers.
 - Requesting `hand-tracking` makes Chromium ask **Allow hand tracking?** in
   the browser panel before the session starts.
+
+## The laser pointer on the browser panel (2026-09-28)
+
+gamescope (3.16.28 on the Frame) turns SteamVR's laser events for a panel
+into input for the app. A trigger press is `VREvent_MouseButtonDown` with the
+left button, which gamescope sends as a Wayland touch, then Xwayland passes
+it on as an XInput 2 touch. What happens next depends on gamescope's *touch
+click mode* for that panel (`GetTouchClickMode` in
+`src/Backends/OpenVRBackend.cpp`):
+
+- **Windows of an app Steam launched** (app id taken from the `STEAM_GAME`
+  property, the `app-steam-app<id>-<pid>.scope` cgroup, or a
+  `reaper SteamLaunch AppId=<id>` ancestor): forced to *left click*, in a
+  code path commented as a workaround for Steam not setting
+  `STEAM_TOUCH_CLICK_MODE` on the Frame. The touch becomes a left mouse
+  button, so holding the trigger and dragging selects text.
+- **Windows with no app id**: *passthrough*. Each gets its own panel
+  (`gamescope.gamescope-0.window.<n>`) and receives real touches. The
+  Desktop Mode panel is one of these, which is why a browser there scrolls
+  when you drag.
+
+The thumbstick sends `VREvent_ScrollSmooth`, which gamescope turns into mouse
+wheel events in either mode.
+
+Chromium registers itself in a systemd scope of its own
+(`app-org.chromium.Chromium-<pid>.scope`), so gamescope finds the app id by
+walking up to Steam's `reaper`. Forking can't escape that, because `reaper`
+is a subreaper. When `SteamAppId` is set, the `chromium-xr` launcher starts
+Chromium with `systemd-run --user` instead, and waits for it to exit.
+Chromium's parent is then the user's systemd, and its windows get no app id.
+Chromium's menus and bubbles are override-redirect windows, which gamescope
+shows only over a focused window with the same app id. They come from the
+same process, so they get app id 0 as well.
+
+Verified on the Frame (SteamOS build 20260922.6101926), without wearing the
+headset:
+
+- Launched from Steam, the old launcher's window had app id 2349681812 and
+  panel `valve.steam.desktopgame.2349681812`. Setting `STEAM_GAME` to 0 on
+  it destroyed that panel and created `gamescope.gamescope-0.window.70`.
+- With the new launcher, Chromium's parent is `systemd`, not `reaper`. Its
+  panel is `gamescope.gamescope-0.window.88`, `GAMESCOPE_FOCUSABLE_APPS` is
+  empty, and `SIGTERM` to the launcher, which is what Steam's Stop does,
+  closes Chromium and removes the service.
+- Xwayland 24.1.9 gives every device the XI1 type `xwayland-pointer`,
+  including `xwayland-touch`. Chromium's X11 hotplug code only counts
+  `TOUCHSCREEN` or `xwayland-touch` as a touchscreen, so it reports
+  `navigator.maxTouchPoints` 0 and leaves out the touch API. Its XI2 touch
+  handling (`TouchFactory`) still accepts the device's touches. The launcher
+  passes `--touch-events=enabled`, and pages then see `ontouchstart`.
+- Chromium's `--touch-devices=<id>` switch isn't a way around this. It
+  would make every button of the shared `xwayland-pointer` a touch,
+  including wheel and right-click.
+
+Not yet checked in the headset: dragging a page, fling, and menus and
+permission prompts showing on the new panel.
+
+## The VR permission (2026-09-28)
+
+Chromium's VR permission is the `vr` content setting, default Ask, with
+Allow, Ask and Block all valid defaults
+(`components/content_settings/core/browser/content_settings_registry.cc`).
+No policy or command-line switch sets it, and managed policies would have to
+go in `/etc/chromium`, which is on the Frame's read-only root. So before each
+start, if Chromium isn't already running (its `SingletonLock` link names a
+live process), the launcher sets `profile.default_content_setting_values.vr`
+to 1 (Allow) in `Default/Preferences` and deletes `vr` exceptions whose
+setting is 2 (Block). **Verified on the Frame:** aframe.io, which had no
+saved exception, started an immersive session from `requestSession` with no
+prompt, and the value was still 1 after Chromium quit and rewrote the file.
+It doesn't cover **Allow hand tracking?** (the `hand_tracking` setting).
+
+The same test showed WebXR still works with Chromium outside Steam's
+process tree. The launcher keeps Steam's environment, including
+`SteamAppId`, and SteamVR still bound the session to
+`steam.app.2349681812`.
 
 ## Graphics
 

@@ -35,10 +35,107 @@ fi
 # --disable-seccomp-filter-sandbox: with the XR process's seccomp policy on,
 #   SteamVR sees the wrong process ID and refuses the session (see
 #   docs/technical-notes.md). The namespace sandbox stays on.
-exec "$CHROME" \
-  --user-data-dir="$HOME/.config/chromium-xr" \
-  --enable-features=OpenXR \
-  --ozone-platform=x11 \
-  --no-first-run --no-default-browser-check --password-store=basic \
-  --disable-seccomp-filter-sandbox \
-  "$@"
+# --touch-events=enabled: Xwayland labels its touch device as a pointer, so
+#   Chromium doesn't offer pages the touch API on its own.
+profile=$HOME/.config/chromium-xr
+
+# Let every site enter VR without the "Allow VR?" prompt: make Allow the
+# default for the VR permission, and drop per-site Block exceptions. There's
+# no policy or switch for this, and Chromium only reads Preferences at start,
+# so skip it while Chromium is running. flock stops two launches editing the
+# file at once; the running check is inside it, so it's fresh for each edit.
+mkdir -p "$profile"
+flock "$profile/.chromium-xr-prefs.lock" python3 - "$profile" <<'EOF' ||
+import json, os, sys, tempfile
+profile = sys.argv[1]
+try:
+    # SingletonLock is a symlink to "<host>-<pid>" while Chromium runs.
+    os.kill(int(os.readlink(os.path.join(profile, 'SingletonLock')).rsplit('-', 1)[1]), 0)
+    sys.exit(0)  # Chromium is running
+except (OSError, ValueError, IndexError):
+    pass  # no lock, or a stale one: not running
+path = os.path.join(profile, 'Default', 'Preferences')
+try:
+    with open(path) as f:
+        prefs = json.load(f)
+except FileNotFoundError:
+    prefs = {}
+settings = prefs.setdefault('profile', {})
+settings.setdefault('default_content_setting_values', {})['vr'] = 1  # Allow
+vr = settings.get('content_settings', {}).get('exceptions', {}).get('vr', {})
+for pattern in [p for p, v in vr.items() if isinstance(v, dict) and v.get('setting') == 2]:
+    del vr[pattern]  # Block
+os.makedirs(os.path.dirname(path), exist_ok=True)
+# Private (0600) and unique, so the file never widens its permissions and two
+# launches can't write into each other's copy.
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix='.Preferences.')
+try:
+    with os.fdopen(fd, 'w') as f:
+        json.dump(prefs, f)
+    os.replace(tmp, path)
+except BaseException:
+    os.unlink(tmp)
+    raise
+EOF
+  echo "chromium-xr: couldn't set the VR permission to Allow" >&2
+
+cmd=("$CHROME"
+  --user-data-dir="$profile"
+  --enable-features=OpenXR
+  --ozone-platform=x11
+  --no-first-run --no-default-browser-check --password-store=basic
+  --disable-seccomp-filter-sandbox
+  --touch-events=enabled
+  "$@")
+
+# gamescope turns the controller's laser into mouse clicks for apps that Steam
+# launched, so dragging selects text instead of scrolling. Windows outside
+# Steam's process tree still get their own panel, but the laser reaches them
+# as a touchscreen, as in Desktop Mode. So when Steam starts us, run Chromium
+# as its own systemd user service and wait for it, which keeps it "running"
+# in Steam. CHROMIUM_XR_STEAM_PANEL=1 keeps the old behaviour.
+if [[ -z "${SteamAppId:-}" || "${CHROMIUM_XR_STEAM_PANEL:-}" == 1 ]] ||
+    ! command -v systemd-run >/dev/null; then
+  exec "${cmd[@]}"
+fi
+
+# Pass our environment through by name (-E NAME copies its value), minus
+# systemd's per-service bookkeeping.
+env_args=()
+for name in $(compgen -e); do
+  case $name in
+    INVOCATION_ID|JOURNAL_STREAM|MANAGERPID|SYSTEMD_EXEC_PID|NOTIFY_SOCKET|MEMORY_PRESSURE_*|LISTEN_*) ;;
+    *) env_args+=(-E "$name") ;;
+  esac
+done
+unit=chromium-xr-$$
+# Steam's Stop, or the reaper ending us, closes Chromium too. Set before
+# starting it, so a Stop during startup isn't lost (bash runs the trap once
+# systemd-run returns).
+stopping=
+trap 'stopping=1; systemctl --user stop --no-block "$unit" 2>/dev/null' TERM INT HUP
+if ! systemd-run --user --quiet --collect --same-dir --unit="$unit" \
+    --service-type=exec --expand-environment=no "${env_args[@]}" "${cmd[@]}"; then
+  # A Stop can make systemd-run fail too; don't start Chromium again then.
+  [[ -z "$stopping" ]] || exit 0
+  echo "chromium-xr: systemd-run failed; starting in Steam's panel instead" >&2
+  exec "${cmd[@]}"
+fi
+# MainPID is 0 once the service has ended (and been collected), e.g. when
+# Chromium passed the URL to a window that was already open. A failed query
+# is retried rather than taken to mean Chromium has gone.
+pid=
+for _ in 1 2 3 4 5; do
+  pid=$(systemctl --user show -p MainPID --value "$unit") && break
+  pid=
+  sleep 1
+done
+if [[ -z "$pid" ]]; then
+  echo "chromium-xr: can't query $unit; Chromium keeps running, but Steam won't track it" >&2
+  exit 1
+fi
+[[ "$pid" != 0 ]] || exit 0
+while kill -0 "$pid" 2>/dev/null; do
+  tail --pid="$pid" -f /dev/null &
+  wait $! || true
+done
