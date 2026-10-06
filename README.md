@@ -44,7 +44,7 @@ SteamVR 2.17.10) with Chromium **156.0.8071.0**, built for arm64:
 | Laser pointer on the browser panel | reaches Chromium as a touchscreen, so trigger-and-drag scrolls the page (set up and checked on the Frame; the drag itself not yet tried in the headset) |
 | Frame rate | 72 fps, every frame 13.9–14 ms over 16 s (simple scene); SteamVR dropped frames only at startup |
 
-The build now targets Chromium 157.0.8088.0, the first release with the
+The build now targets Chromium 157 or newer, which has the
 upstream Linux OpenXR changes merged. It hasn't been tested on the Frame yet.
 
 This is an unofficial, experimental build. See [Limitations](#limitations)
@@ -155,8 +155,9 @@ page directly.
 - **Saved passwords aren't encrypted.** The launcher uses
   `--password-store=basic` so startup doesn't stop at a keyring prompt, so
   passwords you save are stored unencrypted in `~/.config/chromium-xr`.
-- **No automatic updates.** It won't get Chromium security fixes until you
-  rebuild it.
+- **No automatic updates on the Frame.** It won't get Chromium security fixes
+  until you install a newer build. The repo builds new Chromium releases by
+  itself (see [Updating](#updating)), but you still have to install them.
 - **No controller vibration.** SteamVR reports no haptic actuators to the page.
 - **No DRM video.** There's no Widevine, so paid streaming services that
   need it won't play.
@@ -192,7 +193,14 @@ This removes the build, the launcher, the menu entry and the Steam shortcut.
 ## Updating
 
 The build pins one Chromium release (`CHROMIUM_VERSION` in
-[`build/build.sh`](build/build.sh), currently 157.0.8088.0). To build a newer
+[`build/build.sh`](build/build.sh)). On GitHub, the **Bump Chromium** workflow
+checks once a week for a newer Linux release on Stable (on Beta until Stable
+reaches Chromium 157). If the patch in [`patches/`](patches) still applies,
+it updates the pin, tags it and starts a build that publishes a release; if
+not, the run fails so the patch can be updated by hand. In a fork, enable
+scheduled workflows in the **Actions** tab first.
+
+To build a newer
 one, set `CHROMIUM_VERSION` to any Chromium release tag when you run the
 build, as in `CHROMIUM_VERSION=<version> build/build.sh`, or enter it
 when you run the GitHub workflow. The script fetches it, syncs, re-applies the

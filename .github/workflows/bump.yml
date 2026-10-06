@@ -1,0 +1,53 @@
+# Keeps the build on a current Chromium, for its security fixes.
+#
+# Once a week, looks for a newer Linux release on Stable (or Beta, until
+# Stable reaches Chromium 157; see .github/scripts/bump.sh). If the local
+# patches still apply to it, commits the new CHROMIUM_VERSION, tags it
+# v<version>-1 and starts the Build workflow, which publishes a release.
+# If they don't apply, this run fails and nothing is changed.
+name: Bump Chromium
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: bump
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Look for a newer Chromium
+        id: check
+        run: .github/scripts/bump.sh
+
+      - name: Stop if the patches don't apply
+        if: steps.check.outputs.patches == 'fail'
+        run: |
+          echo "::error::Update patches/ for Chromium ${{ steps.check.outputs.version }}, then bump CHROMIUM_VERSION by hand."
+          exit 1
+
+      - name: Commit, tag and build
+        if: steps.check.outputs.version != '' && steps.check.outputs.patches == 'ok'
+        env:
+          VERSION: ${{ steps.check.outputs.version }}
+          BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sed -i "s/^CHROMIUM_VERSION=.*/CHROMIUM_VERSION=\${CHROMIUM_VERSION:-$VERSION}/" build/build.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "build.sh: Chromium $VERSION"
+          tag="v$VERSION-1"
+          git tag "$tag"
+          git push origin "HEAD:$BRANCH" "$tag"
+          # Pushes made with github.token don't trigger workflows, so start it here.
+          gh workflow run build.yml --ref "$tag"
