@@ -121,7 +121,11 @@ page directly.
   filter for every process; the namespace sandbox stays on. Without it,
   SteamVR refuses the session (details in
   [docs/technical-notes.md](docs/technical-notes.md)). Use Chrome XR for VR
-  sites and keep another browser for everyday browsing.
+  sites and keep another browser for everyday browsing. Valve has
+  [changed SteamVR](https://github.com/utzcoz/chromium-webxr-linux/issues/7#issuecomment-5958394261)
+  so this should become unnecessary with a coming Steam Frame OS Beta. To
+  try with the filter on, start it with `CHROME_XR_SECCOMP=1`, for example
+  `CHROME_XR_SECCOMP=1 chrome-xr`.
 - **Saved passwords aren't encrypted.** The launcher uses
   `--password-store=basic` so startup doesn't stop at a keyring prompt, so
   passwords you save are stored unencrypted in `~/.config/chrome-xr`.
