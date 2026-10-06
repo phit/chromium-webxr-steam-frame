@@ -39,8 +39,8 @@ fi
 #   Chromium doesn't offer pages the touch API on its own.
 profile=$HOME/.config/chromium-xr
 
-# Let every site enter VR without the "Allow VR?" prompt: make Allow the
-# default for the VR permission, and drop per-site Block exceptions. There's
+# Let sites enter VR without the "Allow VR?" prompt: make Allow the default
+# for the VR permission. Sites blocked in Site settings stay blocked. There's
 # no policy or switch for this, and Chromium only reads Preferences at start,
 # so skip it while Chromium is running. flock stops two launches editing the
 # file at once; the running check is inside it, so it's fresh for each edit.
@@ -62,9 +62,6 @@ except FileNotFoundError:
     prefs = {}
 settings = prefs.setdefault('profile', {})
 settings.setdefault('default_content_setting_values', {})['vr'] = 1  # Allow
-vr = settings.get('content_settings', {}).get('exceptions', {}).get('vr', {})
-for pattern in [p for p, v in vr.items() if isinstance(v, dict) and v.get('setting') == 2]:
-    del vr[pattern]  # Block
 os.makedirs(os.path.dirname(path), exist_ok=True)
 # Private (0600) and unique, so the file never widens its permissions and two
 # launches can't write into each other's copy.

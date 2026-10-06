@@ -114,7 +114,7 @@ Library**, and pick Chromium XR.
 2. Go to a WebXR site, for example the
    [WebXR Samples](https://immersive-web.github.io/webxr-samples/).
 3. Press the site's **Enter VR** button. It opens in the headset straight
-   away: the launcher sets Chromium's VR permission to Allow for every site,
+   away: the launcher makes Allow the default for Chromium's VR permission,
    so there's no **Allow VR?** prompt.
 4. To leave VR, use the site's exit button or the Steam button.
 
@@ -154,11 +154,11 @@ page directly.
   `CHROMIUM_XR_STEAM_PANEL=1` in the shortcut's launch options (as
   `CHROMIUM_XR_STEAM_PANEL=1 %command%`) to keep it in Steam's panel, with
   mouse clicks.
-- **Every site can start VR.** Each launch sets the VR permission's default
-  to Allow and removes any per-site Block, so any page can take over the
-  headset when you press its button (or, on some sites, without one). You
-  can still block a site in `chrome://settings/content/vr`, but only until
-  the next launch.
+- **Sites can start VR without asking.** Each launch sets the VR
+  permission's default to Allow, so any page can take over the headset when
+  you press its button (or, on some sites, without one). To stop a site,
+  block it in `chrome://settings/content/vr`; the launcher leaves per-site
+  Blocks alone.
 - **One window at a time per profile.** If Chromium XR is already open,
   launching it again opens the page in the existing window.
 - **Not a default browser.** It works as one (the desktop entry registers

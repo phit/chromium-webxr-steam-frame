@@ -158,8 +158,10 @@ No policy or command-line switch sets it, and managed policies would have to
 go in `/etc/chromium`, which is on the Frame's read-only root. So before each
 start, if Chromium isn't already running (its `SingletonLock` link names a
 live process), the launcher sets `profile.default_content_setting_values.vr`
-to 1 (Allow) in `Default/Preferences` and deletes `vr` exceptions whose
-setting is 2 (Block). **Verified on the Frame:** aframe.io, which had no
+to 1 (Allow) in `Default/Preferences`. Per-site `vr` exceptions, including
+Blocks (setting 2), are left as they are, so a site the user blocked stays
+blocked. (The first version also deleted Blocks; that was dropped, so a
+block now outlasts a relaunch.) **Verified on the Frame:** aframe.io, which had no
 saved exception, started an immersive session from `requestSession` with no
 prompt, and the value was still 1 after Chromium quit and rewrote the file.
 It doesn't cover **Allow hand tracking?** (the `hand_tracking` setting).
