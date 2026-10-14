@@ -17,6 +17,7 @@
 #   CHROMIUM_XR_STEPS  steps to run, in order (default "prepare build package")
 #   BUILD_TIMEOUT      stop the build step after this many seconds and exit
 #                      with 124; running the build step again continues it
+#   CHROMIUM_XR_SISO   false builds with ninja instead of siso (default true)
 set -euo pipefail
 
 W=${CHROMIUM_XR_DIR:-$HOME/chromium-xr}
@@ -99,7 +100,7 @@ G
 
   mkdir -p out/XR
   # Rewritten on every run: change build settings here, not in out/XR/args.gn.
-  cat > out/XR/args.gn <<'A'
+  cat > out/XR/args.gn <<A
 target_os = "linux"
 target_cpu = "arm64"
 is_debug = false
@@ -113,7 +114,7 @@ proprietary_codecs = true
 ffmpeg_branding = "Chrome"
 enable_nacl = false
 use_remoteexec = false
-use_siso = true
+use_siso = ${CHROMIUM_XR_SISO:-true}
 treat_warnings_as_errors = false
 A
   stage "gn gen"
