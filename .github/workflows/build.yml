@@ -27,6 +27,10 @@ permissions:
 
 env:
   CHROMIUM_VERSION: ${{ inputs.chromium_version }}
+  # Build with ninja, as ungoogled-chromium's CI does: siso rebuilt everything
+  # in each part from the restored tree, so the build never got past ~50k of
+  # its ~112k steps (run 37452455630).
+  CHROMIUM_XR_SISO: "false"
 
 jobs:
   part_01:

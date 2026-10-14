@@ -62,7 +62,10 @@ case $1 in
 
   save)
     mkdir -p "$CACHE_DIR"
-    tar -cf - -C "$CHROMIUM_XR_DIR" . | zstd -T0 -3 -f -o "$CACHE"
+    # POSIX (pax) format keeps file times to the nanosecond, so the next part
+    # sees exactly the times this one built with; GNU tar's default format
+    # rounds them to whole seconds.
+    tar --format=posix -cf - -C "$CHROMIUM_XR_DIR" . | zstd -T0 -3 -f -o "$CACHE"
     ls -la "$CACHE"
     ;;
 
