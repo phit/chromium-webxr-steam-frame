@@ -24,7 +24,7 @@ W=${CHROMIUM_XR_DIR:-$HOME/chromium-xr}
 PATCHES=$(cd "$(dirname "$0")/../patches" && pwd)
 # A Chromium release tag. 157.0.8088.0 (Canary) is the first release with all
 # the upstream Linux OpenXR changes this build needs (see README).
-CHROMIUM_VERSION=${CHROMIUM_VERSION:-157.0.8103.15}
+CHROMIUM_VERSION=${CHROMIUM_VERSION:-158.0.8127.2}
 REF=refs/tags/$CHROMIUM_VERSION
 STEPS=${CHROMIUM_XR_STEPS:-prepare build package}
 
