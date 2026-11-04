@@ -12,6 +12,17 @@ on Linux in version 157, and it's off unless the browser is started with the
 right flags. This installer downloads Google's arm64 Chrome and sets it up on
 the Frame with those flags, as a normal app in your Steam library.
 
+> **Update, November 2026:** from Steam Frame OS 0.5.7 (build 20261103),
+> Chrome and Chromium 157 do immersive WebXR on the Frame on their own, with
+> no flags: Google's arm64 Chrome 157.0.8103.38 enters VR when started
+> without any of the launcher's flags. Once Flathub's Chromium reaches 157
+> (it's on 156.0.8078.79 as of 5 November 2026), installing it from Discover
+> is all you need. Until then, this installer is a quick way to get Chrome
+> 157 onto the Frame and into your Steam library. Its
+> `--disable-seccomp-filter-sandbox` isn't needed on 0.5.7, so start it with
+> `CHROME_XR_SECCOMP=1` to keep Chrome's full sandbox (see
+> [Limitations](#limitations)).
+
 This is the `google` branch. The `main` branch builds and installs Chromium
 instead, as **Chromium XR**. The two use different names, folders and
 profiles, so both can be installed at once.
@@ -124,10 +135,11 @@ type just `chrome-xr`, add `export PATH="$HOME/.local/bin:$PATH"` to
   SteamVR refuses the session (details in
   [docs/technical-notes.md](docs/technical-notes.md)). Use Chrome XR for VR
   sites and keep another browser for everyday browsing. Valve has
-  [changed SteamVR](https://github.com/utzcoz/chromium-webxr-linux/issues/7#issuecomment-5958394261)
-  so this should become unnecessary with a coming Steam Frame OS Beta. To
-  try with the filter on, start it with `CHROME_XR_SECCOMP=1`, for example
-  `CHROME_XR_SECCOMP=1 ~/.local/bin/chrome-xr`.
+  [changed SteamVR](https://github.com/utzcoz/chromium-webxr-linux/issues/7#issuecomment-5958394261),
+  and from Steam Frame OS 0.5.7 it isn't needed any more: start it with
+  `CHROME_XR_SECCOMP=1` to keep the filter on, for example
+  `CHROME_XR_SECCOMP=1 ~/.local/bin/chrome-xr`, or as
+  `CHROME_XR_SECCOMP=1 %command%` in the Steam shortcut's launch options.
 - **Saved passwords aren't encrypted.** The launcher uses
   `--password-store=basic` so startup doesn't stop at a keyring prompt, so
   passwords you save are stored unencrypted in `~/.config/chrome-xr`.
