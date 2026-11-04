@@ -44,7 +44,11 @@ other end of its socket, and `XrProcessPolicy` refuses every `getsockopt`.
 allows exactly `SOL_SOCKET`/`SO_PEERCRED` and still returns `EPERM` for
 everything else.
 
-## Why the seccomp filter is still off
+## Why the seccomp filter was off (before Steam Frame OS 0.5.7)
+
+From Steam Frame OS 0.5.7 (build 20261103), SteamVR works with the filter on,
+and the launcher only passes `--disable-seccomp-filter-sandbox` when started
+with `CHROME_XR_SECCOMP=0`. The rest of this section is how it was before.
 
 With the patch, `xrCreateInstance` gets further but fails with
 `Unable to init path manager: VRInitError_Init_Internal`. SteamVR's client
@@ -56,7 +60,7 @@ can only answer for itself.
 
 Fixing this properly needs a change in Chromium: for example, having the
 broker client rewrite `/proc/self` to `/proc/<caller pid>`, or opening the
-needed `/proc` files before the sandbox seals. Until then the launcher passes
+needed `/proc` files before the sandbox seals. Until 0.5.7 the launcher passed
 `--disable-seccomp-filter-sandbox`. The namespace sandbox still works:
 SteamOS allows unprivileged user namespaces, so the setuid `chrome_sandbox`
 isn't needed.

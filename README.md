@@ -18,10 +18,8 @@ the Frame with those flags, as a normal app in your Steam library.
 > without any of the launcher's flags. Once Flathub's Chromium reaches 157
 > (it's on 156.0.8078.79 as of 5 November 2026), installing it from Discover
 > is all you need. Until then, this installer is a quick way to get Chrome
-> 157 onto the Frame and into your Steam library. Its
-> `--disable-seccomp-filter-sandbox` isn't needed on 0.5.7, so start it with
-> `CHROME_XR_SECCOMP=1` to keep Chrome's full sandbox (see
-> [Limitations](#limitations)).
+> 157 onto the Frame and into your Steam library, with Chrome's full sandbox
+> on.
 
 This is the `google` branch. The `main` branch builds and installs Chromium
 instead, as **Chromium XR**. The two use different names, folders and
@@ -129,17 +127,16 @@ type just `chrome-xr`, add `export PATH="$HOME/.local/bin:$PATH"` to
 
 ## Limitations
 
-- **Part of the sandbox is off.** The launcher passes
-  `--disable-seccomp-filter-sandbox`, which turns off Chrome's system-call
-  filter for every process; the namespace sandbox stays on. Without it,
-  SteamVR refuses the session (details in
-  [docs/technical-notes.md](docs/technical-notes.md)). Use Chrome XR for VR
-  sites and keep another browser for everyday browsing. Valve has
-  [changed SteamVR](https://github.com/utzcoz/chromium-webxr-linux/issues/7#issuecomment-5958394261),
-  and from Steam Frame OS 0.5.7 it isn't needed any more: start it with
-  `CHROME_XR_SECCOMP=1` to keep the filter on, for example
-  `CHROME_XR_SECCOMP=1 ~/.local/bin/chrome-xr`, or as
-  `CHROME_XR_SECCOMP=1 %command%` in the Steam shortcut's launch options.
+- **Needs Steam Frame OS 0.5.7 or newer.** Older versions of SteamVR refuse
+  the session while Chrome's system-call filter is on (details in
+  [docs/technical-notes.md](docs/technical-notes.md)); Valve
+  [changed SteamVR](https://github.com/utzcoz/chromium-webxr-linux/issues/7#issuecomment-5958394261)
+  in 0.5.7. On an older version, start it with `CHROME_XR_SECCOMP=0`, for
+  example `CHROME_XR_SECCOMP=0 ~/.local/bin/chrome-xr`, or as
+  `CHROME_XR_SECCOMP=0 %command%` in the Steam shortcut's launch options. That
+  passes `--disable-seccomp-filter-sandbox`, which turns the filter off for
+  every process (the namespace sandbox stays on), so then keep Chrome XR for
+  VR sites and another browser for everyday browsing.
 - **Saved passwords aren't encrypted.** The launcher uses
   `--password-store=basic` so startup doesn't stop at a keyring prompt, so
   passwords you save are stored unencrypted in `~/.config/chrome-xr`.
@@ -199,8 +196,10 @@ the package manager for that.
 - **SteamVR and the sandbox.** SteamVR's OpenXR client makes calls that the
   XR process's seccomp filter refuses: `getsockopt(SO_PEERCRED)`, and reads
   of `/proc/self` that the sandbox's broker answers for the wrong process.
-  The launcher passes `--disable-seccomp-filter-sandbox`, which avoids both,
-  so Google's unmodified Chrome works. (The `main` branch's Chromium build
+  Before Steam Frame OS 0.5.7 the launcher passed
+  `--disable-seccomp-filter-sandbox`, which avoids both; from 0.5.7 SteamVR
+  works with the filter on, and the flag is only passed with
+  `CHROME_XR_SECCOMP=0`. (The `main` branch's Chromium build
   also carries [`patches/0001-…`](patches/0001-xr-sandbox-allow-getsockopt-SO_PEERCRED.patch)
   for the first.) Reported upstream in
   [utzcoz/chromium-webxr-linux#7](https://github.com/utzcoz/chromium-webxr-linux/issues/7).
@@ -208,7 +207,7 @@ the package manager for that.
   the Steam client's local DevTools port, the same API the Steam UI uses.
   Steam runs each app as its own panel, so Chrome gets one too.
 
-More detail, including why the seccomp filter is off, is in
+More detail, including why the seccomp filter used to be off, is in
 [docs/technical-notes.md](docs/technical-notes.md).
 
 ## Related work

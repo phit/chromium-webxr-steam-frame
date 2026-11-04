@@ -33,11 +33,10 @@ fi
 # --ozone-platform=x11: gamescope's X display, where each app is a panel.
 # --no-first-run and --password-store=basic: otherwise startup can stop at a
 #   first-run or keyring prompt you can't see.
-# --disable-seccomp-filter-sandbox: with the XR process's seccomp policy on,
-#   SteamVR sees the wrong process ID and refuses the session (see
-#   docs/technical-notes.md). The namespace sandbox stays on. Valve has
-#   changed SteamVR so this shouldn't be needed from a coming Steam Frame OS
-#   Beta; CHROME_XR_SECCOMP=1 leaves the filter on, to try that.
+# --disable-seccomp-filter-sandbox, only with CHROME_XR_SECCOMP=0: before Steam
+#   Frame OS 0.5.7, SteamVR saw the wrong process ID with the XR process's
+#   seccomp policy on and refused the session (see docs/technical-notes.md).
+#   From 0.5.7 it doesn't, so the filter stays on by default.
 # --touch-events=enabled: Xwayland labels its touch device as a pointer, so
 #   Chromium doesn't offer pages the touch API on its own.
 profile=${CHROME_XR_PROFILE:-$HOME/.config/chrome-xr}
@@ -85,7 +84,7 @@ cmd=("$CHROME"
   --ozone-platform=x11
   --no-first-run --no-default-browser-check --password-store=basic
   --touch-events=enabled)
-[[ "${CHROME_XR_SECCOMP:-}" == 1 ]] || cmd+=(--disable-seccomp-filter-sandbox)
+[[ "${CHROME_XR_SECCOMP:-1}" != 0 ]] || cmd+=(--disable-seccomp-filter-sandbox)
 cmd+=("$@")
 
 # gamescope turns the controller's laser into mouse clicks for apps that Steam
