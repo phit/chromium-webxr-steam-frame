@@ -5,21 +5,20 @@ Steam Frame** headset, as **Chrome XR**. Press the **Enter VR** button on a
 WebXR site and it opens in the headset, through SteamVR, as a full VR
 experience.
 
-The Chromium that SteamOS offers (Flathub) can't do this. Websites see
-`navigator.xr`, but `isSessionSupported("immersive-vr")` returns `false`, so
-VR buttons are greyed out or missing. Chrome and Chromium only gained OpenXR
-on Linux in version 157, and it's off unless the browser is started with the
-right flags. This installer downloads Google's arm64 Chrome and sets it up on
-the Frame with those flags, as a normal app in your Steam library.
+Before version 157, the Chromium that SteamOS offers (Flathub) couldn't do
+this: websites saw `navigator.xr`, but `isSessionSupported("immersive-vr")`
+returned `false`, so VR buttons were greyed out or missing. Chrome and
+Chromium only gained OpenXR on Linux in version 157. This installer
+downloads Google's arm64 Chrome and sets it up on the Frame as a normal app
+in your Steam library.
 
 > **Update, November 2026:** from Steam Frame OS 0.5.7 (build 20261103),
 > Chrome and Chromium 157 do immersive WebXR on the Frame on their own, with
 > no flags: Google's arm64 Chrome 157.0.8103.38 enters VR when started
-> without any of the launcher's flags. Once Flathub's Chromium reaches 157
-> (it's on 156.0.8078.79 as of 5 November 2026), installing it from Discover
-> is all you need. Until then, this installer is a quick way to get Chrome
-> 157 onto the Frame and into your Steam library, with Chrome's full sandbox
-> on.
+> without any of the launcher's flags. Flathub's Chromium reached 157 on
+> 6 November 2026, so installing Chromium from Discover is all you need.
+> This installer still works if you'd rather have Google's Chrome, or a
+> Chrome that runs as its own app in your Steam library.
 
 This is the `google` branch. The `main` branch builds and installs Chromium
 instead, as **Chromium XR**. The two use different names, folders and
