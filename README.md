@@ -1,5 +1,9 @@
 # Chromium with WebXR for the Steam Frame
 
+> **Archived, November 2026.** No longer needed: from Steam Frame OS 0.5.7,
+> Flathub's Chromium 157 does WebXR on the Frame with no flags. Install
+> Chromium from Discover.
+
 A build recipe and installer for **Chromium with immersive WebXR on Valve's
 Steam Frame** headset. Press the
 **Enter VR** button on a WebXR site and it opens in the headset, through
